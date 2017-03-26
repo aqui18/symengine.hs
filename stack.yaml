@@ -4,4 +4,13 @@ packages:
 extra-deps:
 - finite-typelits-0.1.0.0
 - vector-sized-0.4.0.0
-resolver: lts-7.12
+extra-include-dirs:
+- /usr/local/include
+extra-lib-dirs:
+- /usr/local/lib
+flags: {}
+extra-package-dbs: []
+ghc-options:
+  symengine: '-lsymengine'
+
+resolver: lts-8.2
