@@ -129,3 +129,4 @@ yield weird as hell errors?
 * `merijn	You'll want newPinnedByteArray# :: Int# -> State# s -> (#State# s, MutableByteArray# s#)`
 
 * is the API Thread-safe?
+
