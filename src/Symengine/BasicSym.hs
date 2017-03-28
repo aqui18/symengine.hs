@@ -14,6 +14,7 @@ module Symengine.BasicSym(
      rational,
      complex,
      symbol_new,
+     subs,
      diff,
      expand,
      -- HACK: this should be internal :(
@@ -71,6 +72,8 @@ e = basicsym_construct basic_const_E_ffi
 expand :: BasicSym -> BasicSym
 expand = lift_basicsym_unaryop basic_expand_ffi
 
+subs :: BasicSym -> BasicSym -> BasicSym -> BasicSym
+subs = lift_basicsym_ternaryop basic_subs_ffi
 
 eulerGamma :: BasicSym
 eulerGamma = basicsym_construct basic_const_EulerGamma_ffi
@@ -124,6 +127,14 @@ basicsym_new = do
     finalized_ptr <- newForeignPtr ptr_basic_free_heap_ffi  basic_ptr
 
     return $ BasicSym finalized_ptr
+    
+lift_basicsym_ternaryop :: (Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> IO CInt) -> 
+    BasicSym -> BasicSym -> BasicSym -> BasicSym
+lift_basicsym_ternaryop f a b c = unsafePerformIO $ do
+    s <- basicsym_new
+    with4 s a b c f >>= throwOnSymIntException
+
+    return s
 
 -- NOTE: throws exception
 lift_basicsym_binaryop :: (Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> IO CInt) -> 
@@ -241,6 +252,7 @@ foreign import ccall "symengine/cwrapper.h complex_set" complex_set_ffi :: Ptr C
 
 foreign import ccall "symengine/cwrapper.h basic_expand" basic_expand_ffi :: Ptr CBasicSym -> Ptr CBasicSym -> IO CInt
 
+foreign import ccall "symengine/cwrapper.h basic_subs2" basic_subs_ffi :: Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> IO CInt
 
 foreign import ccall "symengine/cwrapper.h basic_add" basic_add_ffi :: Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> IO CInt
 foreign import ccall "symengine/cwrapper.h basic_sub" basic_sub_ffi :: Ptr CBasicSym -> Ptr CBasicSym -> Ptr CBasicSym -> IO CInt
