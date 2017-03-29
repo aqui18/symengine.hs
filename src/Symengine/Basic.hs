@@ -62,10 +62,10 @@ e :: Basic
 e = Basic (B.construct B.basic_const_E_ffi)
 
 expand :: Basic -> Basic
-expand (Basic a) = Basic (B.lift_unaryop B.basic_expand_ffi a)
+expand (Basic a) = Basic (B.liftB B.basic_expand_ffi a)
 
 subs :: Basic -> Basic -> Basic -> Basic
-subs (Basic expr) (Basic x) (Basic x') = Basic (B.lift_ternaryop B.basic_subs_ffi expr x x')
+subs (Basic expr) (Basic x) (Basic x') = Basic (B.liftB3 B.basic_subs_ffi expr x x')
 
 eulerGamma :: Basic
 eulerGamma = Basic (B.construct B.basic_const_EulerGamma_ffi)
@@ -83,15 +83,15 @@ basicFromInteger i = Basic (unsafePerformIO $ do
   return s)
 
 pow :: Basic -> Basic -> Basic
-pow (Basic a) (Basic b) = Basic (B.lift_binaryop B.basic_pow_ffi a b)
+pow (Basic a) (Basic b) = Basic (B.liftB2 B.basic_pow_ffi a b)
 
 -- |Create a rational number with numerator and denominator
 rational :: Basic -> Basic -> Basic
-rational (Basic num) (Basic denom) = Basic (B.lift_binaryop B.rational_set_ffi num denom)
+rational (Basic num) (Basic denom) = Basic (B.liftB2 B.rational_set_ffi num denom)
 
 -- |Create a complex number a + b * im
 complex :: Basic -> Basic -> Basic
-complex (Basic a) (Basic b) = Basic (B.lift_binaryop B.complex_set_ffi a b)
+complex (Basic a) (Basic b) = Basic (B.liftB2 B.complex_set_ffi a b)
 
 rationalFromInteger :: Integer -> Integer -> Basic
 rationalFromInteger i j = Basic (unsafePerformIO $ do
@@ -110,7 +110,7 @@ symbol name = Basic (unsafePerformIO $ do
 
 -- |Differentiate an expression with respect to a symbol
 diff :: Basic -> Basic -> Basic
-diff (Basic expr) (Basic x) = Basic (B.lift_binaryop B.basic_diff_ffi expr x)
+diff (Basic expr) (Basic x) = Basic (B.liftB2 B.basic_diff_ffi expr x)
 
 instance Show Basic where
     show (Basic a) = unsafePerformIO (with a (B.basic_str_ffi >=> peekCString))
@@ -121,16 +121,16 @@ instance Eq Basic where
                              return $ i == 1
 
 instance Num Basic where
-    (Basic a) + (Basic b) = Basic (B.lift_binaryop B.basic_add_ffi a b)
-    (Basic a) - (Basic b) = Basic (B.lift_binaryop B.basic_sub_ffi a b)
-    (Basic a) * (Basic b) = Basic (B.lift_binaryop B.basic_mul_ffi a b)
-    negate (Basic a)      = Basic (B.lift_unaryop  B.basic_neg_ffi a)
-    abs    (Basic a)      = Basic (B.lift_unaryop  B.basic_abs_ffi a)
+    (Basic a) + (Basic b) = Basic (B.liftB2 B.basic_add_ffi a b)
+    (Basic a) - (Basic b) = Basic (B.liftB2 B.basic_sub_ffi a b)
+    (Basic a) * (Basic b) = Basic (B.liftB2 B.basic_mul_ffi a b)
+    negate (Basic a)      = Basic (B.liftB  B.basic_neg_ffi a)
+    abs    (Basic a)      = Basic (B.liftB  B.basic_abs_ffi a)
     signum (Basic a)      = undefined
     fromInteger           = basicFromInteger
 
 instance Fractional Basic where
-    (Basic a) / (Basic b) = Basic (B.lift_binaryop B.basic_div_ffi a b)
+    (Basic a) / (Basic b) = Basic (B.liftB2 B.basic_div_ffi a b)
     fromRational (num :% denom) = rationalFromInteger num denom
     recip r = one / r
 
@@ -141,16 +141,16 @@ instance Floating Basic where
     sqrt x = x  ** 1/2
     (**) = pow
     logBase = undefined
-    sin   (Basic a) = Basic (B.lift_unaryop B.basic_sin_ffi   a)
-    cos   (Basic a) = Basic (B.lift_unaryop B.basic_cos_ffi   a)
-    tan   (Basic a) = Basic (B.lift_unaryop B.basic_tan_ffi   a)
-    asin  (Basic a) = Basic (B.lift_unaryop B.basic_asin_ffi  a)
-    acos  (Basic a) = Basic (B.lift_unaryop B.basic_acos_ffi  a)
-    atan  (Basic a) = Basic (B.lift_unaryop B.basic_atan_ffi  a)
-    sinh  (Basic a) = Basic (B.lift_unaryop B.basic_sinh_ffi  a)
-    cosh  (Basic a) = Basic (B.lift_unaryop B.basic_cosh_ffi  a)
-    tanh  (Basic a) = Basic (B.lift_unaryop B.basic_tanh_ffi  a)
-    asinh (Basic a) = Basic (B.lift_unaryop B.basic_asinh_ffi a)
-    acosh (Basic a) = Basic (B.lift_unaryop B.basic_acosh_ffi a)
-    atanh (Basic a) = Basic (B.lift_unaryop B.basic_atanh_ffi a)
+    sin   (Basic a) = Basic (B.liftB B.basic_sin_ffi   a)
+    cos   (Basic a) = Basic (B.liftB B.basic_cos_ffi   a)
+    tan   (Basic a) = Basic (B.liftB B.basic_tan_ffi   a)
+    asin  (Basic a) = Basic (B.liftB B.basic_asin_ffi  a)
+    acos  (Basic a) = Basic (B.liftB B.basic_acos_ffi  a)
+    atan  (Basic a) = Basic (B.liftB B.basic_atan_ffi  a)
+    sinh  (Basic a) = Basic (B.liftB B.basic_sinh_ffi  a)
+    cosh  (Basic a) = Basic (B.liftB B.basic_cosh_ffi  a)
+    tanh  (Basic a) = Basic (B.liftB B.basic_tanh_ffi  a)
+    asinh (Basic a) = Basic (B.liftB B.basic_asinh_ffi a)
+    acosh (Basic a) = Basic (B.liftB B.basic_acosh_ffi a)
+    atanh (Basic a) = Basic (B.liftB B.basic_atanh_ffi a)
 

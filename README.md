@@ -109,24 +109,3 @@ All code is released under the [MIT License](https://github.com/symengine/symeng
 of C types
 
 * API design - how to best handle exceptions?
-
-# Bugs
-
-* if I create a lazy list of BasicSym, then what happens? it gets forced to evaluate
-when I pass it through something like `densematrix_diag`
-
-
-* `densematrix_new_vec  2 3 []` crashes. We need to check for this in our code
-
-
-* What exactly does 'unsafePerformIO' do? why does `unsafePerformIO` on `basicsym_new`
-yield weird as hell errors?
-
-* take proper care of ref. transparency. eg: `densematrix_set`
-
-* Maybe allow GHC to tell about "typo errors" when looking for modules
-
-* `merijn	You'll want newPinnedByteArray# :: Int# -> State# s -> (#State# s, MutableByteArray# s#)`
-
-* is the API Thread-safe?
-

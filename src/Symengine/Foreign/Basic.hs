@@ -39,25 +39,25 @@ new = do
 
     return $ Basic finalized_ptr
     
-lift_ternaryop :: (Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> IO CInt) -> 
+liftB3 :: (Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> IO CInt) -> 
     Basic -> Basic -> Basic -> Basic
-lift_ternaryop f a b c = unsafePerformIO $ do
+liftB3 f a b c = unsafePerformIO $ do
     s <- new
     with4 s a b c f >>= throwOnSymIntException
 
     return s
 
 -- NOTE: throws exception
-lift_binaryop :: (Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> IO CInt) -> 
+liftB2 :: (Ptr CBasic -> Ptr CBasic -> Ptr CBasic -> IO CInt) -> 
     Basic -> Basic -> Basic
-lift_binaryop f a b = unsafePerformIO $ do
+liftB2 f a b = unsafePerformIO $ do
     s <- new
     with3 s a b f >>= throwOnSymIntException
 
     return s
 
-lift_unaryop :: (Ptr CBasic -> Ptr CBasic -> IO CInt) -> Basic -> Basic
-lift_unaryop f a = unsafePerformIO $ do
+liftB :: (Ptr CBasic -> Ptr CBasic -> IO CInt) -> Basic -> Basic
+liftB f a = unsafePerformIO $ do
     s <- new 
     with2 s a f >>= throwOnSymIntException
     return $ s
