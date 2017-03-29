@@ -9,17 +9,13 @@
 {-# LANGUAGE TypeApplications #-}
 -- to bring stuff like (r, c) into scope
 {-# LANGUAGE ScopedTypeVariables #-}
-module Symengine.Foreign.setBasic
-  (
-    setBasic,
-    setbasic_new,
-    setbasic_push_back,
-    setbasic_get,
-    setbasic_size,
-    settor_to_setbasic,
-   )
-where
-
+module Symengine.Foreign.Set 
+    (
+    Set,
+    new,
+    get,
+    size
+    ) where
 
 import Prelude
 import Foreign.C.Types
@@ -30,53 +26,47 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.ForeignPtr
 import Control.Applicative
-import Control.Monad -- for foldM
 import System.IO.Unsafe
 import Control.Monad
 import GHC.Real
-import Symengine
 
 import GHC.TypeLits -- type level programming
-import qualified Data.settor.Sized as V -- sized settors
 
-import Symengine.Internal
-import Symengine.BasicSym
+import           Symengine.Foreign.Internal
+import qualified Symengine.Foreign.Basic as B
 
+data CSet
+data Set = Set !(ForeignPtr CSet)
 
-newtype SetBasic = SetBasic (ForeignPtr CSetBasic)
-
-instance Wrapped setBasic CsetBasic where
-    with (setBasic p) f = withForeignPtr p f
-
+instance Wrapped Set CSet where
+    with (Set p) = withForeignPtr p
 
 -- | get the i'th element out of a setbasic
-setbasic_get :: SetBasic -> Int -> Either SymengineException BasicSym
-setbasic_get set i =
-  if i >= 0 && i < setbasic_size set
-  then
-    unsafePerformIO $ do
-    sym <- basicsym_new
-    exception <- cIntToEnum <$> with2 set sym (\v s -> setbasic_get_ffi v i s)
-    case exception of
-      NoException -> return (Right sym)
-      _ -> return (Left exception)
-  else
-    Left RuntimeError
+get :: Set -> Int -> Either SymengineException B.Basic
+get set i 
+  | i >= 0 && i < size set = 
+      unsafePerformIO $ do
+          sym <- B.new
+          exception <- cIntToEnum <$> with2 set sym (\v s -> setbasic_get_ffi v i s)
+          case exception of
+            NoException -> return (Right sym)
+            _ -> return (Left exception)
+  | otherwise =  Left RuntimeError
 
-
--- | Create a new setBasic
-setbasic_new :: IO SetBasic
-setbasic_new = do
+-- | Create a new Set
+new :: IO Set
+new = do
     ptr <- setbasic_new_ffi
     finalized <- newForeignPtr setbasic_free_ffi ptr
-    return $ setBasic (finalized)
+    return (Set finalized)
 
-setbasic_size :: SetBasic -> Int
-setbasic_size set = unsafePerformIO $
+size :: Set -> Int
+size set = unsafePerformIO $
   fromIntegral <$> with set setbasic_size_ffi
 
-foreign import ccall "symengine/cwrapper.h setbasic_new" setbasic_new_ffi :: IO (Ptr CsetBasic)
-foreign import ccall "symengine/cwrapper.h setbasic_get" setbasic_get_ffi :: Ptr CsetBasic -> Int -> Ptr CBasicSym -> IO CInt
-foreign import ccall "symengine/cwrapper.h setbasic_size" setbasic_size_ffi :: Ptr CsetBasic -> IO CSize
-foreign import ccall "symengine/cwrapper.h &setbasic_free" setbasic_free_ffi :: FunPtr (Ptr CsetBasic -> IO ())
+foreign import ccall "symengine/cwrapper.h basic_free_symbols" basic_free_symbols_ffi :: Ptr B.CBasic -> Ptr CSet -> Ptr (IO CInt)
+foreign import ccall "symengine/cwrapper.h setbasic_new" setbasic_new_ffi :: IO (Ptr CSet)
+foreign import ccall "symengine/cwrapper.h setbasic_get" setbasic_get_ffi :: Ptr CSet -> Int -> Ptr B.CBasic -> IO CInt
+foreign import ccall "symengine/cwrapper.h setbasic_size" setbasic_size_ffi :: Ptr CSet -> IO CSize
+foreign import ccall "symengine/cwrapper.h &setbasic_free" setbasic_free_ffi :: FunPtr (Ptr CSet -> IO ())
 

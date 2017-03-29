@@ -3,20 +3,21 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Symengine.Basic
-    (
-     zero,
-     one,
-     im,
-     Symengine.Basic.pi,
-     e,
-     minusOne,
-     rational,
-     complex,
-     symbol,
-     subs,
-     diff,
-     expand
+module Symengine.Basic 
+    ( 
+    Basic,
+    zero,
+    one,
+    im,
+    Symengine.Basic.pi,
+    e,
+    minusOne,
+    rational,
+    complex,
+    symbol,
+    subs,
+    diff,
+    expand
     ) where
 
 import Prelude
@@ -31,9 +32,11 @@ import Control.Applicative
 import System.IO.Unsafe
 import Control.Monad
 import GHC.Real
+import Data.Set
 
 import           Symengine.Foreign.Internal
 import qualified Symengine.Foreign.Basic as B
+import qualified Symengine.Foreign.Set as S
 
 newtype Basic = Basic { getBasic :: B.Basic }
 
@@ -111,6 +114,9 @@ symbol name = Basic (unsafePerformIO $ do
 -- |Differentiate an expression with respect to a symbol
 diff :: Basic -> Basic -> Basic
 diff (Basic expr) (Basic x) = Basic (B.liftB2 B.basic_diff_ffi expr x)
+
+freeVariables :: Basic -> Set Basic
+freeVariables = undefined
 
 instance Show Basic where
     show (Basic a) = unsafePerformIO (with a (B.basic_str_ffi >=> peekCString))

@@ -67,13 +67,13 @@ import Control.Monad
 import GHC.Real
 import Data.Proxy
 
-import GHC.TypeLits -- type level programming
-import qualified Data.Vector.Sized as V -- sized vectors
-import Data.Finite -- types to represent numbers
+import GHC.TypeLits 
+import qualified Data.Vector.Sized as V
+import Data.Finite 
 
-import Symengine.Internal
-import Symengine.BasicSym
-import Symengine.VecBasic
+import           Symengine.Foreign.Internal
+import qualified Symengine.Foreign.Basic as B
+import qualified Symengine.Foreign.Vector as FV
 
 class Matrix m where
   (<>) :: (KnownNat r, KnownNat c, KnownNat k) => m r k -> m k c -> m r c 
@@ -206,6 +206,10 @@ densematrix_set mat r c sym = unsafePerformIO $ do
 type NRows = Int
 type NCols = Int
 
+newtype L r c = L (DenseMatrix r c)
+newtype U r c = U (DenseMatrix r c)
+newtype D r c = D (DenseMatrix r c)
+
 -- | provides dimenions of matrix. combination of the FFI calls
 -- `dense_matrix_rows` and `dense_matrix_cols`
 densematrix_size :: forall r c. (KnownNat r, KnownNat c) => DenseMatrix r c -> (NRows, NCols)
@@ -226,7 +230,6 @@ densematrix_mul_matrix mata matb = unsafePerformIO $ do
    res <- densematrix_new
    throwOnSymIntException =<< with3 res mata matb cdensematrix_mul_matrix_ffi
    return res
-
 
 densematrix_mul_scalar :: forall r c. (KnownNat r, KnownNat c) => 
   DenseMatrix r c -> BasicSym -> DenseMatrix r c
@@ -253,9 +256,6 @@ transpose d = unsafePerformIO $ do
   throwOnSymIntException =<< with2 m d cdensematrix_transpose_ffi
   return m
 
-newtype L r c = L (DenseMatrix r c)
-newtype U r c = U (DenseMatrix r c)
-
 densematrix_lu :: (KnownNat r, KnownNat c) => DenseMatrix r c-> (L r c, U r c)
 densematrix_lu mat = unsafePerformIO $ do
    l <- densematrix_new
@@ -263,7 +263,6 @@ densematrix_lu mat = unsafePerformIO $ do
    throwOnSymIntException =<< with3 l u mat cdensematrix_lu
    return (L l, U u)
 
-newtype D r c = D (DenseMatrix r c)
 densematrix_ldl :: (KnownNat r, KnownNat c) => DenseMatrix r c-> (L r c, D r c)
 densematrix_ldl mat = unsafePerformIO $ do
   l <- densematrix_new
@@ -272,14 +271,12 @@ densematrix_ldl mat = unsafePerformIO $ do
 
   return (L l, D d)
 
-
 newtype FFLU r c = FFLU (DenseMatrix r c)
 densematrix_fflu :: (KnownNat r, KnownNat c) => DenseMatrix r c -> FFLU r c
 densematrix_fflu mat = unsafePerformIO $ do
   fflu <- densematrix_new
   throwOnSymIntException =<< with2 fflu mat cdensematrix_fflu
   return (FFLU fflu)
-
 
 densematrix_ffldu ::  (KnownNat r, KnownNat c) =>
   DenseMatrix r c -> (L r c, D r c, U r c)
@@ -291,8 +288,6 @@ densematrix_ffldu mat = unsafePerformIO $ do
   throwOnSymIntException =<< with4 l d u mat cdensematrix_ffldu
   return (L l, D d, U u)
 
--- solve A x = B
--- A is first param, B is second larameter
 densematrix_lu_solve :: (KnownNat r, KnownNat c) => 
   DenseMatrix r c -> DenseMatrix r c -> DenseMatrix r c
 densematrix_lu_solve a b = unsafePerformIO $ do
@@ -300,47 +295,3 @@ densematrix_lu_solve a b = unsafePerformIO $ do
   throwOnSymIntException =<< with3 x a b cdensematrix_lu_solve
   return x
 
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_new" cdensematrix_new_ffi :: IO (Ptr CDenseMatrix)
-foreign import ccall unsafe "symengine/cwrapper.h &dense_matrix_free" cdensematrix_free_ffi :: FunPtr ((Ptr CDenseMatrix) -> IO ())
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_new_rows_cols" cdensematrix_new_rows_cols_ffi :: CUInt -> CUInt -> IO (Ptr CDenseMatrix)
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_new_vec" cdensematrix_new_vec_ffi :: CUInt -> CUInt -> Ptr CVecBasic -> IO (Ptr CDenseMatrix)
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_zeros" cdensematrix_zeros_ffi :: Ptr CDenseMatrix -> CULong -> CULong -> IO CInt
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_eye" cdensematrix_eye_ffi :: Ptr CDenseMatrix -> CULong -> CULong  -> CULong -> IO CInt
-foreign import ccall unsafe "symengine/cwrapper.h dense_matrix_diag" cdensematrix_diag_ffi :: Ptr CDenseMatrix -> Ptr CVecBasic -> CULong  -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_eq" cdensematrix_eq_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_set" cdensematrix_set_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_str" cdensematrix_str_ffi :: Ptr CDenseMatrix -> IO CString
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_get_basic" cdensematrix_get_basic_ffi :: Ptr (CBasicSym)  -> Ptr CDenseMatrix -> CUInt -> CUInt -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_set_basic" cdensematrix_set_basic_ffi :: Ptr CDenseMatrix -> CUInt -> CUInt -> Ptr (CBasicSym)  -> IO CInt
-
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_rows" cdensematrix_rows_ffi :: Ptr CDenseMatrix -> IO CULong
-foreign import ccall "symengine/cwrapper.h dense_matrix_cols" cdensematrix_cols_ffi :: Ptr CDenseMatrix -> IO CULong
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_add_matrix"
-  cdensematrix_add_matrix_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_mul_matrix"
-  cdensematrix_mul_matrix_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_mul_scalar"
-  cdensematrix_mul_scalar_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CBasicSym -> IO CInt
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_det"
-  cdensematrix_det_ffi :: Ptr CBasicSym -> Ptr CDenseMatrix -> IO CInt
-
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_inv"
-  cdensematrix_inv_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_transpose"
-  cdensematrix_transpose_ffi :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-
-foreign import ccall "symengine/cwrapper.h dense_matrix_LU" cdensematrix_lu :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_LDL" cdensematrix_ldl :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_FFLU" cdensematrix_fflu :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_FFLDU" cdensematrix_ffldu :: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt
-foreign import ccall "symengine/cwrapper.h dense_matrix_LU_solve" cdensematrix_lu_solve:: Ptr CDenseMatrix -> Ptr CDenseMatrix -> Ptr CDenseMatrix -> IO CInt

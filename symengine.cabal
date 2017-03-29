@@ -15,14 +15,11 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Foo,
-  --Symengine,
-                       --Symengine.DenseMatrix,
+  exposed-modules:     
+                  --Symengine,
                        Symengine.Basic
+                       --Symengine.DenseMatrix,
                        --Symengine.NumberTheory
-
-  --other-modules:       Symengine.Internal,
-                       --Symengine.VecBasic
 
   build-depends:       base >= 4.5.0 && <= 5,
                        containers,
