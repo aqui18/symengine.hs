@@ -5,17 +5,18 @@
 -- data declarations that are empty
 {-# LANGUAGE EmptyDataDecls #-}
 
-module Symengine.Internal
+module Symengine.Foreign.Internal
   (
     cIntToEnum,
     cIntFromEnum,
+    integerToCLong,
+    intToCLong,
+    intToCInt,
     mkForeignPtr,
     Wrapped(..),
     with2,
     with3,
     with4,
-    CBasicSym,
-    CVecBasic,
     SymengineException(NoException, RuntimeError, DivByZero, NotImplemented, DomainError, ParseError),
     forceException,
     throwOnSymIntException
@@ -84,10 +85,11 @@ with3 o1 o2 o3 f = with2 o1 o2 (\p1 p2 -> with o3 (\p3 -> f p1 p2 p3))
 with4:: Wrapped o1 i1 => Wrapped o2 i2 => Wrapped o3 i3 => Wrapped o4 i4 => o1 -> o2 -> o3 -> o4 -> (Ptr i1 -> Ptr i2 -> Ptr i3 -> Ptr i4 -> IO a) -> IO a
 with4 o1 o2 o3 o4 f = with o1 (\p1 -> with3 o2 o3 o4 (\p2 p3 p4 -> f p1 p2 p3 p4))
 
--- BasicSym
-data CBasicSym
+integerToCLong :: Integer -> CLong
+integerToCLong i = CLong (fromInteger i)
 
--- VecBasic
-data CVecBasic
+intToCLong :: Int -> CLong
+intToCLong i = toEnum i
 
--- CDenseMatrix
+intToCInt :: Int -> CInt
+intToCInt i = toEnum i

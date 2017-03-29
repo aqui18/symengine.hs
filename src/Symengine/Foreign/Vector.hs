@@ -9,7 +9,7 @@
 {-# LANGUAGE TypeApplications #-}
 -- to bring stuff like (r, c) into scope
 {-# LANGUAGE ScopedTypeVariables #-}
-module Symengine.VecBasic
+module Symengine.Foreign.VecBasic
   (
     VecBasic,
     vecbasic_new,
@@ -59,6 +59,9 @@ import Symengine.BasicSym
 -- | Represents a Vector of BasicSym
 -- | usually, end-users are not expected to interact directly with VecBasic
 -- | this should at some point be moved to Symengine.Internal
+
+data CVecBasic
+
 newtype VecBasic = VecBasic (ForeignPtr CVecBasic)
 
 instance Wrapped VecBasic CVecBasic where
@@ -90,8 +93,7 @@ vecbasic_new :: IO VecBasic
 vecbasic_new = do
     ptr <- vecbasic_new_ffi
     finalized <- newForeignPtr vecbasic_free_ffi ptr
-    return $ VecBasic (finalized)
-
+    return $ VecBasic finalized
 
 vector_to_vecbasic :: forall n. KnownNat n => V.Vector n BasicSym -> IO VecBasic
 vector_to_vecbasic syms = do
