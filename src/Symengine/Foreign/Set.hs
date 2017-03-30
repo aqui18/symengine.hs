@@ -9,13 +9,7 @@
 {-# LANGUAGE TypeApplications #-}
 -- to bring stuff like (r, c) into scope
 {-# LANGUAGE ScopedTypeVariables #-}
-module Symengine.Foreign.Set 
-    (
-    Set,
-    new,
-    get,
-    size
-    ) where
+module Symengine.Foreign.Set where
 
 import Prelude
 import Foreign.C.Types
@@ -41,16 +35,14 @@ data Set = Set !(ForeignPtr CSet)
 instance Wrapped Set CSet where
     with (Set p) = withForeignPtr p
 
--- | get the i'th element out of a setbasic
+-- | get the i'th element out of a Set
 get :: Set -> Int -> Either SymengineException B.Basic
 get set i 
-  | i >= 0 && i < size set = 
+  | i >= 0 && (i < size set) = 
       unsafePerformIO $ do
           sym <- B.new
-          exception <- cIntToEnum <$> with2 set sym (\v s -> setbasic_get_ffi v i s)
-          case exception of
-            NoException -> return (Right sym)
-            _ -> return (Left exception)
+          with2 set sym (\v s -> setbasic_get_ffi v (intToCInt i) s)
+          return (Right sym)
   | otherwise =  Left RuntimeError
 
 -- | Create a new Set
@@ -64,9 +56,9 @@ size :: Set -> Int
 size set = unsafePerformIO $
   fromIntegral <$> with set setbasic_size_ffi
 
-foreign import ccall "symengine/cwrapper.h basic_free_symbols" basic_free_symbols_ffi :: Ptr B.CBasic -> Ptr CSet -> Ptr (IO CInt)
+foreign import ccall "symengine/cwrapper.h basic_free_symbols" basic_free_symbols_ffi :: Ptr B.CBasic -> Ptr CSet -> IO CInt
 foreign import ccall "symengine/cwrapper.h setbasic_new" setbasic_new_ffi :: IO (Ptr CSet)
-foreign import ccall "symengine/cwrapper.h setbasic_get" setbasic_get_ffi :: Ptr CSet -> Int -> Ptr B.CBasic -> IO CInt
+foreign import ccall "symengine/cwrapper.h setbasic_get" setbasic_get_ffi :: Ptr CSet -> CInt -> Ptr B.CBasic -> IO CInt
 foreign import ccall "symengine/cwrapper.h setbasic_size" setbasic_size_ffi :: Ptr CSet -> IO CSize
 foreign import ccall "symengine/cwrapper.h &setbasic_free" setbasic_free_ffi :: FunPtr (Ptr CSet -> IO ())
 

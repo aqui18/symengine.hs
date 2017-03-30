@@ -32,11 +32,11 @@ import Control.Applicative
 import System.IO.Unsafe
 import Control.Monad
 import GHC.Real
-import Data.Set
+import qualified Data.Set as S
 
 import           Symengine.Foreign.Internal
 import qualified Symengine.Foreign.Basic as B
-import qualified Symengine.Foreign.Set as S
+import qualified Symengine.Foreign.Set as FSet
 
 newtype Basic = Basic { getBasic :: B.Basic }
 
@@ -115,8 +115,18 @@ symbol name = Basic (unsafePerformIO $ do
 diff :: Basic -> Basic -> Basic
 diff (Basic expr) (Basic x) = Basic (B.liftB2 B.basic_diff_ffi expr x)
 
-freeVariables :: Basic -> Set Basic
-freeVariables = undefined
+freeSymbols :: Basic -> S.Set Basic
+freeSymbols (Basic expr) = unsafePerformIO $ do
+    set  <- FSet.new
+    with2 expr set FSet.basic_free_symbols_ffi 
+
+    let size = FSet.size set
+        f x = fmap Basic (FSet.get set x)
+        xs = case mapM f [0..(size - 1)] of
+               Right xs -> xs
+               Left  _  -> []
+    
+    return (S.fromList xs)
 
 instance Show Basic where
     show (Basic a) = unsafePerformIO (with a (B.basic_str_ffi >=> peekCString))
@@ -125,6 +135,9 @@ instance Eq Basic where
     (==) (Basic a) (Basic b) = 
         unsafePerformIO $ do i <- with2 a b B.basic_eq_ffi
                              return $ i == 1
+
+instance Ord Basic where
+    compare a b = compare (show a) (show b)
 
 instance Num Basic where
     (Basic a) + (Basic b) = Basic (B.liftB2 B.basic_add_ffi a b)

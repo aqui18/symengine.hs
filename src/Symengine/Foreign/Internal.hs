@@ -31,19 +31,20 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Alloc
 import Foreign.ForeignPtr
 import Control.Applicative
-import Control.Monad -- for foldM
 import System.IO.Unsafe
 import Control.Monad
 import GHC.Real
 import Control.Exception
 import Data.Typeable
 
-data SymengineException = NoException |
-                           RuntimeError |
-                           DivByZero |
-                           NotImplemented |
-                           DomainError |
-                           ParseError deriving (Show, Enum, Eq, Typeable)
+data SymengineException = 
+    NoException 
+  | RuntimeError 
+  | DivByZero 
+  | NotImplemented 
+  | DomainError 
+  | ParseError 
+  deriving (Show, Enum, Eq, Typeable)
 
 instance Exception SymengineException
 
