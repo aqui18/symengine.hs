@@ -43,7 +43,7 @@ get set i
           sym <- B.new
           with2 set sym (\v s -> setbasic_get_ffi v (intToCInt i) s)
           return (Right sym)
-  | otherwise =  Left RuntimeError
+  | otherwise = Left RuntimeError
 
 -- | Create a new Set
 new :: IO Set
